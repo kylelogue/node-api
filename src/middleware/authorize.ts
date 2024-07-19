@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-import prisma from '../db/prisma';
+import prisma from '../db/client';
 
 interface IJwtPayload extends JwtPayload {
     email: string;
@@ -9,7 +9,7 @@ interface IRequest extends Request {
     email: string
 }
 
-const verifyToken = async (req: IRequest, res: Response, next: NextFunction) => {
+const authorize = async (req: IRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader) return res.sendStatus(401);
     const token = authHeader.split(' ')[1];
@@ -27,4 +27,4 @@ const verifyToken = async (req: IRequest, res: Response, next: NextFunction) => 
 
 };
 
-export default verifyToken;
+export default authorize;

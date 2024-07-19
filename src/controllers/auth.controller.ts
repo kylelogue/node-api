@@ -10,18 +10,16 @@ interface IJwtPayload extends JwtPayload {
 
 export const register = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    //TODO: input validation?
+    // TODO: input validation?
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required.' });
     const existingUser = await prisma.user.findUnique({
-        where: {
-            email
-        }
+        where: { email }
     });
     if(existingUser) return res.status(409).json({ message: 'Email has already been registered.' });
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = { email, password: passwordHash };
     await prisma.user.create({
-        data: { ...newUser }
+        data: newUser
     });
     res.status(201).json({ message: 'User created.' });
 };
@@ -30,11 +28,9 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required.' });
     const foundUser = await prisma.user.findUnique({
-        where: {
-            email
-        }
+        where: { email }
     });
-    //Unauthorized
+    // Unauthorized
     if (!foundUser) return res.sendStatus(401);
     // Evaluate password
     const match = await bcrypt.compare(password, foundUser.password);
@@ -67,7 +63,7 @@ export const login = async (req: Request, res: Response) => {
         });
         res.json({ accessToken });
     } else {
-        // Password incorrect
+        // Password is wrong
         res.sendStatus(401);
     }
 };
@@ -82,7 +78,8 @@ export const refresh = async (req: Request, res: Response) => {
             refreshToken
         }
     });
-    if (!foundUser) return res.sendStatus(403); //Forbidden
+    // Forbidden
+    if (!foundUser) return res.sendStatus(403);
     // Evaluate jwt
     const decoded = await jwt.verify(
         refreshToken,
@@ -99,9 +96,10 @@ export const refresh = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
 
-    //TODO: On client...delete the accessToken
+    // TODO: On client...delete the accessToken
     const cookies = req.cookies;
-    if (!cookies?.jwt) return res.sendStatus(204); //No content
+    // No content
+    if (!cookies?.jwt) return res.sendStatus(204);
     const refreshToken = cookies.jwt;
 
     // Is refreshToken in DB?
@@ -111,7 +109,7 @@ export const logout = async (req: Request, res: Response) => {
         }
     });
     if (!foundUser) {
-        res.clearCookie('jwt', { httpOnly: true, secure: true });
+        res.clearCookie('jwt');
         return res.sendStatus(204);
     }
 
@@ -125,6 +123,6 @@ export const logout = async (req: Request, res: Response) => {
         }
     });
 
-    res.clearCookie('jwt', { httpOnly: true });
+    res.clearCookie('jwt');
     res.sendStatus(204);
 };
